@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Standalone Hazelcast member configuration.
+
+  Used by the hz-node1 / hz-node2 services in docker-compose.yml
+  (PDF Chapter 3.6 — "Client-Server Mode — Running Standalone Hazelcast").
+
+  This is the SERVER side. All map configuration (TTL, eviction, indexes,
+  backups, CP subsystem) lives HERE now — not in the Spring Boot app's
+  HazelcastClientConfig, which only configures connection details and
+  the client's local near cache.
+
+  Mounted into both hz-node1 and hz-node2 containers at the same path,
+  so both members share identical map definitions.
+-->
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
+
+    <cluster-name>payment-cluster</cluster-name>
+
+    <network>
+        <port auto-increment="true" port-count="10">5701</port>
+        <join>
+            <multicast enabled="false"/>
+            <tcp-ip enabled="true">
+                <!-- Docker Compose service names — both nodes list each other -->
+                <member>hz-node1</member>
+                <member>hz-node2</member>
+            </tcp-ip>
+        </join>
+    </network>
+
+    <!-- ── payment-cache: fast read-through cache for Payment lookups ── -->
+    <map name="payment-cache">
+        <time-to-live-seconds>600</time-to-live-seconds>   <!-- 10 minutes -->
+        <max-idle-seconds>300</max-idle-seconds>           <!-- 5 minutes -->
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+
+        <eviction eviction-policy="LRU" max-size-policy="PER_NODE" size="50000"/>
+
+        <!-- Indexes for predicate queries (PDF Chapter 4.3) -->
+        <indexes>
+            <index type="HASH">
+                <attributes>
+                    <attribute>status</attribute>
+                </attributes>
+            </index>
+            <index type="HASH">
+                <attributes>
+                    <attribute>merchantId</attribute>
+                </attributes>
+            </index>
+        </indexes>
+    </map>
+
+    <!-- ── idempotency-keys: atomic claim map (PDF Chapter 9.1) ── -->
+    <map name="idempotency-keys">
+        <time-to-live-seconds>86400</time-to-live-seconds> <!-- 24 hours -->
+        <backup-count>2</backup-count>
+    </map>
+
+    <!--
+      CP Subsystem — required for getCPSubsystem().getAtomicLong("payment-seq")
+      (PDF Chapter 5.5). With 2 standalone member nodes, CP_MEMBER_COUNT=2
+      is set for this learning setup; for real fault tolerance use an odd
+      number >= 3 (3, 5, 7...).
+    -->
+    <cp-subsystem>
+        <cp-member-count>2</cp-member-count>
+    </cp-subsystem>
+
+</hazelcast>

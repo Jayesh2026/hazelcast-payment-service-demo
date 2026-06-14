@@ -1,11 +1,12 @@
 package com.payment.config;
 
 /**
- * Shared Hazelcast structure names — 
- * (@Profile("embedded")) 
+ * Shared Hazelcast structure names — used by both HazelcastEmbeddedConfig
+ * (@Profile("embedded")) and HazelcastClientConfig (@Profile("client-server")),
  * and referenced throughout PaymentServiceImpl, PaymentRetryService, etc.
  *
- * Keeping these in one place means PaymentServiceImpl it just asks Hazelcast for "payment-cache" etc.
+ * Keeping these in one place means PaymentServiceImpl never needs to know
+ * which profile is active — it just asks Hazelcast for "payment-cache" etc.
  */
 public final class HazelcastMapNames {
 

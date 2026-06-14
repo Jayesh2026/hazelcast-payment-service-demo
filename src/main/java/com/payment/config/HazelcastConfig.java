@@ -31,6 +31,11 @@ import com.hazelcast.core.HazelcastInstance;
  * In this mode, THIS class fully owns map configuration (TTL, eviction,
  * indexes, near cache) because your app's Config object defines how the
  * embedded cluster member behaves.
+ *
+ * Compare with HazelcastClientConfig (@Profile("client-server")), where map
+ * configuration instead lives on the standalone server nodes
+ * (hazelcast/hazelcast-server.yaml) — the client only configures its own
+ * near cache and connection settings.
  */
 @Configuration
 @Profile("embedded")
