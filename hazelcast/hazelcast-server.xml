@@ -64,12 +64,12 @@
 
     <!--
       CP Subsystem — required for getCPSubsystem().getAtomicLong("payment-seq")
-      (PDF Chapter 5.5). With 2 standalone member nodes, CP_MEMBER_COUNT=2
+      (PDF Chapter 5.5). With 3 standalone member nodes, CP_MEMBER_COUNT=3
       is set for this learning setup; for real fault tolerance use an odd
       number >= 3 (3, 5, 7...).
     -->
     <cp-subsystem>
-        <cp-member-count>2</cp-member-count>
+        <cp-member-count>0</cp-member-count>
     </cp-subsystem>
 
 </hazelcast>

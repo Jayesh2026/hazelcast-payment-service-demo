@@ -14,6 +14,8 @@
 #   - App instance 1:    http://localhost:8081
 #   - App instance 2:    http://localhost:8082
 
+name: hazelcast-payment-demo-clientserver
+
 services:
 
   # ── Hazelcast Member Node 1 ─────────────────────────────────
@@ -29,12 +31,7 @@ services:
     ports:
       - "5701:5701"
     networks:
-      - payment-net
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:5701/hazelcast/health/node-state || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      - payment-network
 
   # ── Hazelcast Member Node 2 ─────────────────────────────────
   hz-node2:
@@ -49,15 +46,9 @@ services:
     ports:
       - "5702:5701"
     networks:
-      - payment-net
+      - payment-network
     depends_on:
-      hz-node1:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:5701/hazelcast/health/node-state || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      - hz-node1
 
   # ── Hazelcast Management Center ─────────────────────────────
   management-center:
@@ -67,11 +58,11 @@ services:
       - "8080:8080"
     environment:
       MC_DEFAULT_CLUSTER_MEMBERS: "hz-node1:5701,hz-node2:5701"
-      MC_DEFAULT_CLUSTER_NAME: "payment-cluster"
+      MC_DEFAULT_CLUSTER: "payment-cluster"
       MC_ADMIN_USER: admin
-      MC_ADMIN_PASSWORD: admin123
+      MC_ADMIN_PASSWORD: Payment@12
     networks:
-      - payment-net
+      - payment-network
     depends_on:
       - hz-node1
       - hz-node2
@@ -89,7 +80,7 @@ services:
     volumes:
       - payment_pg_data:/var/lib/postgresql/data
     networks:
-      - payment-net
+      - payment-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d payment_db"]
       interval: 5s
@@ -99,6 +90,7 @@ services:
   # ── Payment Service — Instance 1 (Hazelcast CLIENT) ─────────
   payment-service-1:
     build: .
+    image: payment-service:latest
     container_name: payment-svc-1
     ports:
       - "8081:8081"
@@ -107,21 +99,19 @@ services:
       SERVER_PORT: 8081
       HAZELCAST_CLIENT_ADDRESSES: "hz-node1:5701,hz-node2:5701"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
-      SPRING_DATASOURCE_USERNAME: payment_user
-      SPRING_DATASOURCE_PASSWORD: payment_pass
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
     networks:
-      - payment-net
+      - payment-network
     depends_on:
-      hz-node1:
-        condition: service_healthy
-      hz-node2:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
+      - hz-node1
+      - hz-node2
+      - postgres
 
   # ── Payment Service — Instance 2 (Hazelcast CLIENT) ─────────
   payment-service-2:
     build: .
+    image: payment-service:latest
     container_name: payment-svc-2
     ports:
       - "8082:8082"
@@ -130,21 +120,20 @@ services:
       SERVER_PORT: 8082
       HAZELCAST_CLIENT_ADDRESSES: "hz-node1:5701,hz-node2:5701"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
-      SPRING_DATASOURCE_USERNAME: payment_user
-      SPRING_DATASOURCE_PASSWORD: payment_pass
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
     networks:
-      - payment-net
+      - payment-network
     depends_on:
-      hz-node1:
-        condition: service_healthy
-      hz-node2:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
+      - hz-node1
+      - hz-node2
+      - postgres
 
 networks:
-  payment-net:
+  payment-network:
+    name: payment-network
     driver: bridge
 
 volumes:
   payment_pg_data:
+    name: payment_pg_data

@@ -49,7 +49,7 @@ public class HazelcastClientConfig {
     private String clusterName;
 
     @Bean
-    public ClientConfig hazelcastClientConfig() {
+    public ClientConfig hzClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
 
         // Must match cluster-name on the standalone server nodes
