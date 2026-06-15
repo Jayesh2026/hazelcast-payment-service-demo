@@ -69,7 +69,7 @@ public class HazelcastConfig {
         // CP_MEMBER_COUNT must be an odd number >= 3 for real fault tolerance.
         // For local single/dual-instance dev/demo, 1 is the minimum that
         // lets the CP Subsystem initialize at all.
-        config.getCPSubsystemConfig().setCPMemberCount(1);
+        config.getCPSubsystemConfig().setCPMemberCount(0);
 
         // ── Serialization: register IdentifiedDataSerializable factory ──
         // Maps to PDF Chapter 8.2 — PaymentCacheDto uses this factory.
